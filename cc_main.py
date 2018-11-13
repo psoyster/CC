@@ -61,15 +61,14 @@ while (cap.isOpened()):
     frame_out = frame.copy()
     frame_gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
-    # Bluring the gray frame with 3x3 Gaussian kernel
+    # Blurring the gray frame with 3x3 Gaussian kernel
     blur = cv2.GaussianBlur(src=frame.copy(), ksize=(3, 3), sigmaX=0)
     mask = fgbg.apply(blur)
 
     mov = np.uint8(mask == 255) * 255
     # mov = cv2.erode(mov, erode, iterations=1)
     # mov = cv2.dilate(mov, dilate, iterations = 1)
-    # mov = cv2.erode(mov, kernel_erode, iterations=1)
-    # mov = cv2.dilate(mov, kernel_dilate, iterations=1)
+
 
     (_, vehicle, _) = cv2.findContours(image=mov, mode=cv2.RETR_EXTERNAL,
                                         method=cv2.CHAIN_APPROX_SIMPLE)
