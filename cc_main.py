@@ -20,8 +20,8 @@
 import cv2
 import numpy as np
 
-config = {'thresh_min': 2000,
-          'thresh_max': 7000,
+config = {'thresh_min': 200,
+          'thresh_max': 9000,
            'max_spots': 112}
 
 
@@ -42,9 +42,13 @@ vid_info = {'fps': cap.get(cv2.CAP_PROP_FPS),
             'num_of_frames': int(cap.get(cv2.CAP_PROP_FRAME_COUNT))}
 
 # MOG2 background subtraction method.
-fgbg = cv2.createBackgroundSubtractorMOG2(history=300,
+fgbg = cv2.createBackgroundSubtractorMOG2(history=200,
                                           varThreshold=16,
-                                          detectShadows=True)
+                                          detectShadows=False)
+
+# fgbg = cv2.createBackgroundSubtractorGMG()
+# fbgb = cv2.createBackgroundSubtractorKNN()
+# fbgb = cv2.createBackgroundSubtractorMOG()
 
 cap.set(cv2.CAP_PROP_POS_FRAMES, 450)  # jump to frame
 erode = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(3, 3))
@@ -62,14 +66,16 @@ while (cap.isOpened()):
     frame_gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
     # Blurring the gray frame with 3x3 Gaussian kernel
-    blur = cv2.GaussianBlur(src=frame.copy(), ksize=(3, 3), sigmaX=0)
-    mask = fgbg.apply(blur)
+    frame_blur = cv2.GaussianBlur(src=frame.copy(), ksize=(3, 3), sigmaX=0)
+    fgmask = fgbg.apply(frame_blur)
 
-    mov = np.uint8(mask == 255) * 255
+    mov = np.uint8(fgmask == 255) * 255
     # mov = cv2.erode(mov, erode, iterations=1)
     # mov = cv2.dilate(mov, dilate, iterations = 1)
 
-
+    # mode = external two points of the detected contour,
+    # method = uses only the outer most four x,y points
+    # both are used as aproximations of the contour boxes for speed
     (_, vehicle, _) = cv2.findContours(image=mov, mode=cv2.RETR_EXTERNAL,
                                         method=cv2.CHAIN_APPROX_SIMPLE)
 
@@ -77,8 +83,7 @@ while (cap.isOpened()):
     for edge in vehicle:
         # print(edge)
         veh_area = cv2.contourArea(edge)
-        if (veh_area < config['thresh_min']) | (veh_area > config[
-            'thresh_max']):
+        if (veh_area < config['thresh_min']) or (veh_area > config['thresh_max']):
             continue
         (x, y, w, h) = cv2.boundingRect(edge)
         cv2.rectangle(frame_out, (x, y), (x + w, y + h), (255, 0, 0), 2)
